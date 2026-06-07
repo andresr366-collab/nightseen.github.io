@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline de Automatización — Backoffice Operations</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0A0A0A;
+    --white: #F5F2EC;
+    --accent: #C8F135;
+    --accent2: #FF6B35;
+    --gray: #1A1A1A;
+    --gray2: #2C2C2C;
+    --gray3: #444;
+    --gray-light: #888;
+    --text-muted: #666;
+    --border: rgba(255,255,255,0.08);
+    --border-accent: rgba(200,241,53,0.3);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 3rem;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-logo { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; }
+  .nav-tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gray-light); letter-spacing: 0.08em; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 8rem 3rem 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse 60% 60% at 70% 30%, rgba(200,241,53,0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 20% 80%, rgba(255,107,53,0.04) 0%, transparent 60%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; z-index: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 900px; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent);
+    border: 0.5px solid var(--border-accent);
+    padding: 6px 14px; border-radius: 2px; margin-bottom: 2.5rem;
+  }
+  .hero-eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(3rem, 7vw, 6.5rem);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    margin-bottom: 2rem;
+  }
+  h1 .accent { color: var(--accent); }
+  h1 .dim { color: var(--gray3); }
+
+  .hero-sub {
+    font-size: 1.1rem; color: rgba(245,242,236,0.6); max-width: 520px;
+    font-weight: 300; line-height: 1.7; margin-bottom: 3rem;
+  }
+
+  .hero-metrics {
+    display: flex; gap: 3rem; flex-wrap: wrap;
+  }
+  .metric { display: flex; flex-direction: column; gap: 4px; }
+  .metric-value { font-family: 'Syne', sans-serif; font-size: 2.8rem; font-weight: 800; line-height: 1; }
+  .metric-value.before { color: var(--gray3); text-decoration: line-through; text-decoration-color: var(--accent2); }
+  .metric-value.after { color: var(--accent); }
+  .metric-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-light); }
+  .metric-arrow { font-size: 2rem; color: var(--accent); align-self: flex-end; padding-bottom: 0.5rem; }
+
+  /* SECTIONS */
+  section { padding: 6rem 3rem; max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 1rem;
+  }
+  h2 {
+    font-family: 'Syne', sans-serif; font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 1rem;
+  }
+  .section-intro { color: rgba(245,242,236,0.55); font-size: 1rem; font-weight: 300; max-width: 560px; line-height: 1.8; margin-bottom: 4rem; }
+
+  /* BEFORE/AFTER */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 2rem; }
+  .compare-card { background: var(--gray); padding: 2.5rem; }
+  .compare-card.after { background: #111A00; }
+  .compare-tag { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .compare-tag.before-tag { color: var(--accent2); }
+  .compare-tag.after-tag { color: var(--accent); }
+  .compare-time { font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800; line-height: 1; margin-bottom: 0.5rem; }
+  .compare-time.before-t { color: var(--gray3); }
+  .compare-time.after-t { color: var(--accent); }
+  .compare-unit { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--gray-light); letter-spacing: 0.08em; }
+  .compare-items { margin-top: 2rem; display: flex; flex-direction: column; gap: 10px; }
+  .compare-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: rgba(245,242,236,0.6); line-height: 1.5; }
+  .compare-item .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 7px; }
+  .before-dot { background: var(--accent2); }
+  .after-dot { background: var(--accent); }
+
+  .saving-banner {
+    background: var(--accent); color: var(--black);
+    padding: 1.5rem 2.5rem; border-radius: 4px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+  }
+  .saving-banner .big { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; }
+  .saving-banner .desc { font-size: 13px; font-weight: 400; opacity: 0.7; font-family: 'DM Mono', monospace; letter-spacing: 0.06em; }
+
+  /* PIPELINE */
+  .pipeline-wrapper { position: relative; }
+  .pipeline-line {
+    position: absolute; left: 27px; top: 40px; bottom: 40px; width: 1.5px;
+    background: linear-gradient(to bottom, var(--accent), rgba(200,241,53,0.1));
+  }
+  .stage { display: flex; gap: 2rem; margin-bottom: 2.5rem; position: relative; }
+  .stage-num {
+    width: 56px; height: 56px; flex-shrink: 0;
+    background: var(--gray2); border: 1.5px solid var(--border-accent);
+    border-radius: 3px; display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+    color: var(--accent); letter-spacing: 0.05em; position: relative; z-index: 1;
+  }
+  .stage-body { flex: 1; background: var(--gray); border: 0.5px solid var(--border); border-radius: 4px; padding: 1.75rem 2rem; }
+  .stage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+  .stage-title { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; }
+  .tools-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tool-pill {
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+    padding: 4px 10px; border-radius: 2px; border: 0.5px solid;
+  }
+  .tool-pill.databricks { border-color: rgba(255,107,53,0.4); color: #FF9066; background: rgba(255,107,53,0.08); }
+  .tool-pill.drive { border-color: rgba(200,241,53,0.3); color: var(--accent); background: rgba(200,241,53,0.06); }
+  .tool-pill.slack { border-color: rgba(106,90,205,0.4); color: #9B8FE8; background: rgba(106,90,205,0.08); }
+  .stage-desc { font-size: 13px; color: rgba(245,242,236,0.55); line-height: 1.7; margin-bottom: 1rem; }
+  .stage-outputs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .output-tag {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--gray-light); border: 0.5px solid var(--border);
+    padding: 4px 10px; border-radius: 2px; letter-spacing: 0.06em;
+  }
+
+  /* SPECIAL: STAGE 3 */
+  .stage-highlight { border-color: rgba(200,241,53,0.2); background: #0F1200; }
+  .stage-num-highlight { background: #1A2200; border-color: var(--accent); }
+
+  /* PROMPTS */
+  .prompts-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+  .prompt-card { background: var(--gray); border: 0.5px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .prompt-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem; border-bottom: 0.5px solid var(--border); cursor: pointer;
+    transition: background 0.2s;
+  }
+  .prompt-header:hover { background: var(--gray2); }
+  .prompt-header-left { display: flex; align-items: center; gap: 12px; }
+  .prompt-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 0.1em; }
+  .prompt-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+  .prompt-toggle { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gray-light); transition: transform 0.3s; }
+  .prompt-body { padding: 1.5rem; display: none; }
+  .prompt-body.open { display: block; }
+  .prompt-body pre {
+    font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.8;
+    color: rgba(245,242,236,0.75); white-space: pre-wrap; word-break: break-word;
+  }
+  .prompt-body pre .var { color: #FF9066; font-style: italic; }
+  .prompt-body pre .kw { color: var(--accent); }
+  .prompt-body pre .alert { color: #FF9066; }
+  .copy-btn {
+    margin-top: 1rem; background: none; border: 0.5px solid var(--border);
+    color: var(--gray-light); font-family: 'DM Mono', monospace; font-size: 11px;
+    padding: 6px 14px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+    letter-spacing: 0.06em;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* CONNECTORS */
+  .connectors-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .connector-card { background: var(--gray); border: 0.5px solid var(--border); border-radius: 4px; padding: 1.75rem; }
+  .connector-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+  .connector-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
+  .connector-role { font-size: 12px; color: rgba(245,242,236,0.45); line-height: 1.6; }
+  .connector-status { display: inline-flex; align-items: center; gap: 5px; margin-top: 1rem; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .status-dot.ready { background: var(--accent); }
+  .status-dot.pending { background: var(--accent2); }
+  .status-ready { color: var(--accent); }
+  .status-pending { color: var(--accent2); }
+
+  /* FOOTER */
+  footer {
+    border-top: 0.5px solid var(--border); padding: 3rem;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: gap;
+  }
+  footer .logo { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gray-light); letter-spacing: 0.1em; }
+  footer .note { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gray3); letter-spacing: 0.06em; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 0; }
+
+  /* SCROLL REVEAL */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 700px) {
+    nav { padding: 1rem 1.5rem; }
+    .hero { padding: 6rem 1.5rem 3rem; }
+    section { padding: 4rem 1.5rem; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .connectors-grid { grid-template-columns: 1fr; }
+    .hero-metrics { gap: 2rem; }
+    footer { padding: 2rem 1.5rem; flex-direction: column; gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">Backoffice Operations</span>
+  <span class="nav-tag">Pipeline de Automatización — 2026</span>
+</nav>
+
+<!-- HERO -->
+<section class="hero" style="max-width:100%; padding-top:8rem;">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Propuesta de automatización</div>
+    <h1>De 2 horas<br>a <span class="accent">10 minutos</span><br><span class="dim">cada semana.</span></h1>
+    <p class="hero-sub">Un pipeline secuencial con IA que extrae, analiza y publica el reporte operacional de Backoffice — sin intervención manual en ningún paso intermedio.</p>
+    <div class="hero-metrics">
+      <div class="metric">
+        <div class="metric-value before">2 hrs</div>
+        <div class="metric-label">Proceso actual</div>
+      </div>
+      <div class="metric-arrow">→</div>
+      <div class="metric">
+        <div class="metric-value after">10 min</div>
+        <div class="metric-label">Con el pipeline</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value after" style="font-size:2rem;">×12</div>
+        <div class="metric-label">Más rápido</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- BEFORE / AFTER -->
+<section class="reveal">
+  <div class="section-label">El problema</div>
+  <h2>Trabajo repetitivo que consume tiempo estratégico</h2>
+  <p class="section-intro">Cada semana, el equipo dedica 2 horas a una tarea que podría ejecutarse sola: extraer datos, armar métricas, redactar el reporte y publicarlo en Slack.</p>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-tag before-tag">// Antes</div>
+      <div class="compare-time before-t">~2h</div>
+      <div class="compare-unit">por semana · proceso manual</div>
+      <div class="compare-items">
+        <div class="compare-item"><span class="dot before-dot"></span>Acceder a Databricks y ejecutar la query manualmente</div>
+        <div class="compare-item"><span class="dot before-dot"></span>Exportar y limpiar datos en una hoja de cálculo</div>
+        <div class="compare-item"><span class="dot before-dot"></span>Calcular métricas y variaciones WoW a mano</div>
+        <div class="compare-item"><span class="dot before-dot"></span>Redactar el resumen ejecutivo e hipótesis</div>
+        <div class="compare-item"><span class="dot before-dot"></span>Revisar, formatear y publicar en Slack</div>
+      </div>
+    </div>
+    <div class="compare-card after">
+      <div class="compare-tag after-tag">// Después</div>
+      <div class="compare-time after-t">~10m</div>
+      <div class="compare-unit">por semana · revisión humana al final</div>
+      <div class="compare-items">
+        <div class="compare-item"><span class="dot after-dot"></span>Lanzar el pipeline (un solo prompt)</div>
+        <div class="compare-item"><span class="dot after-dot"></span>Esperar extracción, análisis y borrador automáticos</div>
+        <div class="compare-item"><span class="dot after-dot"></span>Recibir el borrador por DM en Slack</div>
+        <div class="compare-item"><span class="dot after-dot"></span>Revisar en 5 minutos y responder APROBAR</div>
+        <div class="compare-item"><span class="dot after-dot"></span>El pipeline publica solo en el canal</div>
+      </div>
+    </div>
+  </div>
+  <div class="saving-banner">
+    <div>
+      <div class="big">~100 horas/año recuperadas</div>
+      <div class="desc">basado en 50 semanas laborales × 2 horas de trabajo manual semanal</div>
+    </div>
+    <div style="font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; opacity:0.5;">→</div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PIPELINE -->
+<section class="reveal">
+  <div class="section-label">El pipeline</div>
+  <h2>4 etapas secuenciales,<br>1 punto de control humano</h2>
+  <p class="section-intro">Cada etapa produce un output concreto que alimenta la siguiente. El único momento de intervención humana es la aprobación del borrador.</p>
+
+  <div class="pipeline-wrapper">
+    <div class="pipeline-line"></div>
+
+    <div class="stage">
+      <div class="stage-num">E1</div>
+      <div class="stage-body">
+        <div class="stage-header">
+          <div class="stage-title">Extracción desde Databricks</div>
+          <div class="tools-row">
+            <span class="tool-pill databricks">Databricks MCP</span>
+            <span class="tool-pill drive">Google Drive</span>
+          </div>
+        </div>
+        <p class="stage-desc">Se conecta al catálogo <strong>usr.co</strong> en Databricks, ejecuta la query SQL definida y valida que el resultado no esté vacío. Exporta los datos como CSV y los sube automáticamente a la carpeta designada en Drive.</p>
+        <div class="stage-outputs">
+          <span class="output-tag">reporte_operations_bills_[WEEK##]_raw.csv</span>
+          <span class="output-tag">Confirmación de filas extraídas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-num">E2</div>
+      <div class="stage-body">
+        <div class="stage-header">
+          <div class="stage-title">Transformación y análisis de métricas</div>
+          <div class="tools-row">
+            <span class="tool-pill drive">Google Drive</span>
+          </div>
+        </div>
+        <p class="stage-desc">Lee el CSV desde Drive y calcula las métricas operacionales: volumen total WoW, discriminación por operación interna vs BPOs, cumplimiento de SLA y <strong>alertas dinámicas</strong> para OR &gt;15%, volumen WoW &gt;15% o SLA &lt;70%. Produce un resumen ejecutivo en 5 líneas.</p>
+        <div class="stage-outputs">
+          <span class="output-tag">JSON procesado en Drive</span>
+          <span class="output-tag">Alertas dinámicas</span>
+          <span class="output-tag">Variaciones WoW</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-num stage-num-highlight">E3</div>
+      <div class="stage-body stage-highlight">
+        <div class="stage-header">
+          <div class="stage-title">Análisis contextual + borrador → DM</div>
+          <div class="tools-row">
+            <span class="tool-pill drive">Google Drive</span>
+            <span class="tool-pill slack">Slack</span>
+          </div>
+        </div>
+        <p class="stage-desc">Lee los últimos 5 reportes del canal de Slack (threads con nomenclatura <em>Reporte Semanal Backoffice | DD-MM</em>) para extraer root causes y contexto operacional del equipo. Con ese contexto, actúa como analista y genera <strong>1 a 3 hipótesis</strong> sobre las variaciones detectadas más un plan de acción. Envía todo como borrador por <strong>DM</strong> para revisión.</p>
+        <div class="stage-outputs">
+          <span class="output-tag">Hipótesis contextualizadas</span>
+          <span class="output-tag">Plan de acción</span>
+          <span class="output-tag">Borrador por DM ← punto de revisión</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-num">E4</div>
+      <div class="stage-body">
+        <div class="stage-header">
+          <div class="stage-title">Publicación final en canal de Slack</div>
+          <div class="tools-row">
+            <span class="tool-pill slack">Slack</span>
+          </div>
+        </div>
+        <p class="stage-desc">Con la aprobación recibida (respuesta APROBAR al DM), publica el reporte final en el canal de Slack con los ajustes indicados, tagea a la audiencia interesada e incluye el sello de generación automática con fecha.</p>
+        <div class="stage-outputs">
+          <span class="output-tag">Reporte publicado en canal</span>
+          <span class="output-tag">Tag a audiencia</span>
+          <span class="output-tag">Link de confirmación</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PROMPTS -->
+<section class="reveal">
+  <div class="section-label">Los prompts</div>
+  <h2>Instrucciones listas<br>para ejecutar</h2>
+  <p class="section-intro">Cada prompt está diseñado para ejecutarse en secuencia. Los campos en naranja deben completarse antes del primer uso.</p>
+
+  <div class="prompts-grid">
+
+    <div class="prompt-card">
+      <div class="prompt-header" onclick="togglePrompt(this)">
+        <div class="prompt-header-left">
+          <span class="prompt-num">PROMPT 01</span>
+          <span class="prompt-name">Extracción desde Databricks</span>
+        </div>
+        <span class="prompt-toggle">[ ver ]</span>
+      </div>
+      <div class="prompt-body">
+        <pre><span class="kw">Conéctate al catálogo de Databricks</span> usr.co y ejecuta la siguiente query SQL:
+
+<span class="var">[PEGAR QUERY SQL AQUÍ]</span>
+
+Una vez obtenidos los resultados:
+1. Valida que el resultado no esté vacío. Si lo está, detente y notifícame.
+2. Exporta los datos como un archivo CSV con el nombre:
+   reporte_operations_bills_<span class="var">[WEEK##]</span>_raw.csv
+3. Sube ese archivo a la carpeta de Google Drive:
+   <span class="var">[RUTA DE CARPETA EN DRIVE]</span>
+4. Confirma el nombre del archivo subido y el número de filas extraídas.</pre>
+        <button class="copy-btn" onclick="copyText(this, `Conéctate al catálogo de Databricks usr.co y ejecuta la siguiente query SQL:\n\n[PEGAR QUERY SQL AQUÍ]\n\nUna vez obtenidos los resultados:\n1. Valida que el resultado no esté vacío. Si lo está, detente y notifícame.\n2. Exporta los datos como un archivo CSV con el nombre: reporte_operations_bills_[WEEK##]_raw.csv\n3. Sube ese archivo a la carpeta de Google Drive: [RUTA DE CARPETA EN DRIVE]\n4. Confirma el nombre del archivo subido y el número de filas extraídas.`)">Copiar prompt</button>
+      </div>
+    </div>
+
+    <div class="prompt-card">
+      <div class="prompt-header" onclick="togglePrompt(this)">
+        <div class="prompt-header-left">
+          <span class="prompt-num">PROMPT 02</span>
+          <span class="prompt-name">Transformación y métricas</span>
+        </div>
+        <span class="prompt-toggle">[ ver ]</span>
+      </div>
+      <div class="prompt-body">
+        <pre>Lee el archivo reporte_operations_bills_<span class="var">[WEEK##]</span>_raw.csv
+desde la carpeta <span class="var">[RUTA DE CARPETA EN DRIVE]</span> en Google Drive.
+
+Con esos datos, realiza el siguiente análisis:
+
+<span class="kw">Métricas a calcular:</span>
+— Volumen total de tickets recibidos vs WoW + Variación
+— Volumen discriminado de tickets por operación interna vs BPOs
+  + WoW + OpenRate
+— % de cumplimiento del SLA de la semana anterior
+  comparando volumen recibido vs volumen gestionado
+— <span class="alert">ALERTAS DINÁMICAS:</span> generar mensajes de alerta para:
+  · OR superior al 15%
+  · Incremento de volumen total WoW superior al 15%
+  · SLA por debajo del 70%
+
+<span class="kw">Formato de salida:</span>
+1. Resumen ejecutivo en 5 líneas máximo
+2. Tabla de métricas principales
+3. Hallazgos relevantes o anomalías según las alertas dinámicas
+
+Guarda el análisis como reporte_operations_bills_<span class="var">[WEEK##]</span>_procesado.json
+en la misma carpeta de Drive.</pre>
+        <button class="copy-btn" onclick="copyText(this, `Lee el archivo reporte_operations_bills_[WEEK##]_raw.csv desde la carpeta [RUTA DE CARPETA EN DRIVE] en Google Drive.\n\nCon esos datos, realiza el siguiente análisis:\n\nMétricas a calcular:\n— Volumen total de tickets recibidos vs WoW + Variación\n— Volumen discriminado de tickets por operación interna vs BPOs + WoW + OpenRate\n— % de cumplimiento del SLA de la semana anterior comparando volumen recibido vs volumen gestionado\n— ALERTAS DINÁMICAS: generar mensajes de alerta para: OR >15%, incremento WoW >15%, SLA <70%\n\nFormato de salida:\n1. Resumen ejecutivo en 5 líneas máximo\n2. Tabla de métricas principales\n3. Hallazgos relevantes o anomalías según las alertas dinámicas\n\nGuarda el análisis como reporte_operations_bills_[WEEK##]_procesado.json en la misma carpeta de Drive.`)">Copiar prompt</button>
+      </div>
+    </div>
+
+    <div class="prompt-card" style="border-color: rgba(200,241,53,0.15);">
+      <div class="prompt-header" onclick="togglePrompt(this)">
+        <div class="prompt-header-left">
+          <span class="prompt-num">PROMPT 03</span>
+          <span class="prompt-name">Análisis contextual + borrador → DM</span>
+        </div>
+        <span class="prompt-toggle">[ ver ]</span>
+      </div>
+      <div class="prompt-body">
+        <pre>Lee el archivo reporte_operations_bills_<span class="var">[WEEK##]</span>_procesado.json
+desde Google Drive.
+
+Con esa información, construye el mensaje de Slack con este formato:
+
+📊 *Reporte Operacional Backoffice – <span class="var">[TEAM]</span> — Semana <span class="var">[WEEK##]</span>*
+
+*Resumen ejecutivo*
+<span class="var">[resumen de 5 líneas del análisis]</span>
+
+*Métricas clave*
+<span class="var">[tabla en formato markdown de Slack]</span>
+
+---
+
+<span class="kw">Ingresa al canal de Slack <span class="var">[ID DEL CANAL]</span></span> y lee los replies de los
+threads con nomenclatura: <em>Reporte Semanal Backoffice | DD-MM</em>
+publicados en las últimas 5 semanas.
+
+Aliméntate de los insights y root causes operacionales comentados
+por el equipo para relacionar las variaciones en las métricas
+con contexto del negocio.
+
+Actúa como analista e incluye al final del mensaje:
+
+*Hipótesis operacionales*
+<span class="alert">[entre 1 y 3 hipótesis de lo que pudo ocurrir + plan de acción sugerido]</span>
+
+---
+
+Una vez listo el mensaje completo, envíamelo por DM en Slack a
+<span class="var">[TU USUARIO DE SLACK]</span> con el texto:
+
+🔍 *Borrador listo para revisión — Semana <span class="var">[WEEK##]</span>*.
+Responde con *APROBAR* para publicar, o indícame los cambios.</pre>
+        <button class="copy-btn" onclick="copyText(this, `Lee el archivo reporte_operations_bills_[WEEK##]_procesado.json desde Google Drive.\n\nCon esa información, construye el mensaje de Slack con este formato:\n\n📊 *Reporte Operacional Backoffice – [TEAM] — Semana [WEEK##]*\n\n*Resumen ejecutivo*\n[resumen de 5 líneas del análisis]\n\n*Métricas clave*\n[tabla en formato markdown de Slack]\n\n---\n\nIngresa al canal de Slack [ID DEL CANAL] y lee los replies de los threads con nomenclatura: Reporte Semanal Backoffice | DD-MM publicados en las últimas 5 semanas.\n\nAliméntate de los insights y root causes operacionales comentados por el equipo para relacionar las variaciones con contexto del negocio.\n\nActúa como analista e incluye:\n\n*Hipótesis operacionales*\n[entre 1 y 3 hipótesis + plan de acción sugerido]\n\n---\n\nUna vez listo, envíamelo por DM en Slack a [TU USUARIO DE SLACK] con el texto:\n🔍 *Borrador listo para revisión — Semana [WEEK##]*. Responde con *APROBAR* para publicar, o indícame los cambios.`)">Copiar prompt</button>
+      </div>
+    </div>
+
+    <div class="prompt-card">
+      <div class="prompt-header" onclick="togglePrompt(this)">
+        <div class="prompt-header-left">
+          <span class="prompt-num">PROMPT 04</span>
+          <span class="prompt-name">Publicación final en canal</span>
+        </div>
+        <span class="prompt-toggle">[ ver ]</span>
+      </div>
+      <div class="prompt-body">
+        <pre>El reporte de la Semana <span class="var">[WEEK##]</span> ha sido revisado y aprobado.
+
+Publica el mensaje borrador que enviaste por DM
+(con los ajustes indicados si los hubo)
+en el canal de Slack: <span class="var">[ID DEL CANAL]</span>
+
+Incluye:
+1. El mensaje completo con el formato definido
+2. Tag a la audiencia interesada: <span class="var">[USUARIOS O GRUPOS A TAGEAR]</span>
+3. Al final del mensaje agrega:
+   <span class="kw">"Generado automáticamente el <span class="var">[FECHA]</span>"</span>
+
+Confirma el enlace al mensaje publicado.</pre>
+        <button class="copy-btn" onclick="copyText(this, `El reporte de la Semana [WEEK##] ha sido revisado y aprobado.\n\nPublica el mensaje borrador que enviaste por DM (con los ajustes indicados si los hubo) en el canal de Slack: [ID DEL CANAL]\n\nIncluye:\n1. El mensaje completo con el formato definido\n2. Tag a la audiencia interesada: [USUARIOS O GRUPOS A TAGEAR]\n3. Al final del mensaje agrega: "Generado automáticamente el [FECHA]"\n\nConfirma el enlace al mensaje publicado.`)">Copiar prompt</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CONNECTORS -->
+<section class="reveal">
+  <div class="section-label">Conectores requeridos</div>
+  <h2>Herramientas del stack</h2>
+  <p class="section-intro">Tres conectores MCP que necesitan activarse para que el pipeline funcione de extremo a extremo.</p>
+  <div class="connectors-grid">
+    <div class="connector-card">
+      <div class="connector-icon">⬡</div>
+      <div class="connector-name">Databricks</div>
+      <div class="connector-role">Fuente de datos. Ejecuta la query sobre el catálogo <strong>usr.co</strong> y entrega los resultados al pipeline.</div>
+      <div class="connector-status"><span class="status-dot ready"></span><span class="status-ready">Conectado</span></div>
+    </div>
+    <div class="connector-card">
+      <div class="connector-icon">△</div>
+      <div class="connector-name">Google Drive</div>
+      <div class="connector-role">Almacenamiento intermedio. Recibe el CSV raw y el JSON procesado entre etapas.</div>
+      <div class="connector-status"><span class="status-dot ready"></span><span class="status-ready">Conectado</span></div>
+    </div>
+    <div class="connector-card">
+      <div class="connector-icon">#</div>
+      <div class="connector-name">Slack</div>
+      <div class="connector-role">Canal de salida. Lee el historial de threads para contexto, envía el borrador por DM y publica el reporte final.</div>
+      <div class="connector-status"><span class="status-dot ready"></span><span class="status-ready">Conectado</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<footer>
+  <span class="logo">Backoffice Operations · Pipeline de Automatización</span>
+  <span class="note">Generado con Claude — 2026</span>
+</footer>
+
+<script>
+  function togglePrompt(header) {
+    const body = header.nextElementSibling;
+    const toggle = header.querySelector('.prompt-toggle');
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    toggle.textContent = isOpen ? '[ ver ]' : '[ ocultar ]';
+  }
+
+  function copyText(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copiado ✓';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
